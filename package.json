@@ -5,8 +5,8 @@
   "scripts": {
     "clean": "rm -rf .next .next-dev .next-prod",
     "dev": "mkdir -p .tmp && TMPDIR=$PWD/.tmp NEXT_DIST_DIR=.next-dev-${npm_config_port:-3000} next dev --port ${npm_config_port:-3000}",
-    "build": "mkdir -p .tmp && TMPDIR=$PWD/.tmp NEXT_DIST_DIR=.next-prod next build",
-    "start": "mkdir -p .tmp && TMPDIR=$PWD/.tmp NEXT_DIST_DIR=.next-prod next start",
+    "build": "mkdir -p .tmp && TMPDIR=$PWD/.tmp next build",
+    "start": "mkdir -p .tmp && TMPDIR=$PWD/.tmp next start",
     "lint": "mkdir -p .tmp && TMPDIR=$PWD/.tmp next lint",
     "typecheck": "tsc --noEmit",
     "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json",
