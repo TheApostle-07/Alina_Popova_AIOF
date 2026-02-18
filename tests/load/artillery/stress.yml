@@ -1,0 +1,36 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 180
+      arrivalRate: 50
+      name: stress ramp start
+    - duration: 300
+      arrivalRate: 150
+      rampTo: 450
+      name: stress ramp high
+    - duration: 300
+      arrivalRate: 450
+      name: sustain max stress
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: stress protected/public endpoints
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/membership"
+      - get:
+          url: "/api/content/feed"
+      - post:
+          url: "/api/support"
+          json:
+            email: "stress@example.com"
+            message: "Stress test ping"
+      - post:
+          url: "/api/track"
+          json:
+            event: "page_view"
+            path: "/membership"

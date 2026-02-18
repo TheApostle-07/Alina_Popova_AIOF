@@ -1,0 +1,31 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 21600
+      arrivalRate: 25
+      name: 6h soak
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: long-run mixed traffic
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/join"
+      - get:
+          url: "/terms"
+      - post:
+          url: "/api/track"
+          json:
+            event: "page_view"
+            path: "/"
+      - get:
+          url: "/api/membership/status?subscriptionId=sub_dummy"
+      - post:
+          url: "/api/support"
+          json:
+            email: "soak@example.com"
+            message: "Soak test support ping"

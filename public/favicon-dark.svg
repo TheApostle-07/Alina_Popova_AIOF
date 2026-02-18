@@ -1,0 +1,20 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="apStroke" x1="10" y1="10" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5FA2" />
+      <stop offset="1" stop-color="#E64B8C" />
+    </linearGradient>
+    <radialGradient id="apGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(24 19) rotate(45) scale(42)">
+      <stop stop-color="#FF5FA2" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#FF5FA2" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="#07080C" />
+  <rect x="2.5" y="2.5" width="59" height="59" rx="17.5" stroke="#1C2030" />
+  <rect x="5" y="5" width="54" height="54" rx="15.5" stroke="#E64B8C" stroke-opacity="0.22" />
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#apGlow)" />
+
+  <path d="M16 49L27.5 16L39 49M20.5 37H34.5" stroke="url(#apStroke)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M42 16V49M42 16H49C53.2 16 56 18.8 56 23C56 27.2 53.2 30 49 30H42" stroke="url(#apStroke)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,0 +1,22 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 15
+      arrivalRate: 2
+      name: smoke
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: smoke traffic
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/join"
+      - post:
+          url: "/api/track"
+          json:
+            event: "page_view"
+            path: "/"

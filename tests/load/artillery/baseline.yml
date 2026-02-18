@@ -1,0 +1,32 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 300
+      arrivalRate: 20
+      name: warm-up baseline
+    - duration: 300
+      arrivalRate: 35
+      name: steady baseline
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: marketing to checkout baseline
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/join"
+      - post:
+          url: "/api/track"
+          json:
+            event: "page_view"
+            path: "/"
+      - post:
+          url: "/api/track"
+          json:
+            event: "checkout_start"
+            path: "/join"
+      - get:
+          url: "/api/membership/status?subscriptionId=sub_dummy"

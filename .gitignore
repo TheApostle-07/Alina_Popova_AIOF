@@ -1,0 +1,39 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next
+/out
+.next-dev
+.next-dev-*
+.next-prod
+.next_corrupt_*
+.tmp
+
+# production
+/build
+
+# misc
+.DS_Store
+._*
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# test artifacts
+test-results
+playwright-report

@@ -1,0 +1,22 @@
+<svg width="360" height="72" viewBox="0 0 360 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="apStroke" x1="8" y1="10" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5FA2" />
+      <stop offset="1" stop-color="#E64B8C" />
+    </linearGradient>
+    <radialGradient id="apGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(22 20) rotate(45) scale(44)">
+      <stop stop-color="#FF5FA2" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#FF5FA2" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect x="2" y="10" width="52" height="52" rx="16" fill="#0E1018" />
+  <rect x="2.5" y="10.5" width="51" height="51" rx="15.5" stroke="#1C2030" />
+  <rect x="2" y="10" width="52" height="52" rx="16" fill="url(#apGlow)" />
+
+  <path d="M14.5 48L24.5 22L34.5 48M18.5 38H30.5" stroke="url(#apStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M38.5 22V48M38.5 22H45C49 22 51.5 24.4 51.5 28C51.5 31.6 49 34 45 34H38.5" stroke="url(#apStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+  <text x="70" y="35" fill="#F5F7FF" font-family="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" letter-spacing="0.04em">Alina Popova</text>
+  <text x="70" y="54" fill="#B6BCCF" font-family="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" letter-spacing="0.16em">Private Membership</text>
+</svg>

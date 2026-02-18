@@ -1,0 +1,26 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 180
+      arrivalRate: 120
+      name: hot endpoint hammer
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: otp and status pressure
+    flow:
+      - post:
+          url: "/api/membership/request-otp"
+          json:
+            email: "hot@example.com"
+      - post:
+          url: "/api/membership/restore"
+          json:
+            challengeId: "hot-challenge"
+            otp: "000000"
+      - get:
+          url: "/api/membership/status?subscriptionId=sub_hot"
+      - get:
+          url: "/api/content/feed"

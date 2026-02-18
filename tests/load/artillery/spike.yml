@@ -1,0 +1,41 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 120
+      arrivalRate: 20
+      name: pre-spike
+    - duration: 60
+      arrivalRate: 20
+      rampTo: 220
+      name: viral spike ramp
+    - duration: 180
+      arrivalRate: 220
+      name: spike hold
+    - duration: 120
+      arrivalRate: 40
+      name: cooldown
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: spike hot path
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/join"
+      - post:
+          url: "/api/track"
+          json:
+            event: "page_view"
+            path: "/join"
+      - post:
+          url: "/api/membership/request-otp"
+          json:
+            email: "load-test@example.com"
+      - post:
+          url: "/api/membership/restore"
+          json:
+            challengeId: "load-test-challenge"
+            otp: "000000"
