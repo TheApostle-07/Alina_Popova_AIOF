@@ -10,8 +10,7 @@ const themeBootScript = `
   try {
     const key = "alina_theme";
     const stored = window.localStorage.getItem(key);
-    const fallback = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-    const theme = stored === "light" || stored === "dark" ? stored : fallback;
+    const theme = stored === "light" || stored === "dark" ? stored : "dark";
     document.documentElement.dataset.theme = theme;
   } catch {
     document.documentElement.dataset.theme = "dark";
