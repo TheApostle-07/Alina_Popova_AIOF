@@ -25,15 +25,17 @@ type CreateSubscriptionResponse = {
 
 export function CheckoutPanel({
   compact = false,
-  trackingPath
+  trackingPath,
+  directFlow = false
 }: {
   compact?: boolean;
   trackingPath?: string;
+  directFlow?: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(directFlow);
   const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,14 @@ export function CheckoutPanel({
 
     emailInputRef.current?.focus();
   }, [detailsOpen]);
+
+  useEffect(() => {
+    if (!detailsOpen) {
+      return;
+    }
+
+    void ensureCheckoutScript();
+  }, [detailsOpen, ensureCheckoutScript]);
 
   const startCheckout = async () => {
     setError(null);
@@ -184,7 +194,6 @@ export function CheckoutPanel({
     setError(null);
     setAcceptedPolicies(false);
     setDetailsOpen(true);
-    void ensureCheckoutScript();
   };
 
   return (
@@ -198,7 +207,7 @@ export function CheckoutPanel({
         <CardHeader className={compact ? "space-y-1 p-4 sm:p-5" : "space-y-1 p-5 sm:p-6"}>
           <CardTitle className="text-xl sm:text-2xl">Join my membership</CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            {detailsOpen
+            {detailsOpen || directFlow
               ? "Enter your details to continue to secure checkout."
               : "Tap join to continue - it takes less than a minute."}
           </CardDescription>
@@ -263,11 +272,11 @@ export function CheckoutPanel({
           <Button
             size="lg"
             className="h-12 w-full rounded-2xl text-[15px] sm:h-14 sm:text-base"
-            onClick={detailsOpen ? startCheckout : startJoin}
-            disabled={detailsOpen ? disabled : false}
-            data-analytics-cta={detailsOpen ? "checkout_unlock" : "checkout_join"}
+            onClick={detailsOpen || directFlow ? startCheckout : startJoin}
+            disabled={detailsOpen || directFlow ? disabled : false}
+            data-analytics-cta={detailsOpen || directFlow ? "checkout_unlock" : "checkout_join"}
           >
-            {detailsOpen
+            {detailsOpen || directFlow
               ? loading
                 ? "Preparing secure checkout..."
                 : `Unlock ₹${MEMBERSHIP_PRICE_INR}/month`

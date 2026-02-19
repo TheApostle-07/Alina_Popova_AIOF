@@ -55,9 +55,19 @@ body {
   min-height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--app-bg-gradient);
   color: rgb(var(--color-text));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 a {
@@ -69,6 +79,24 @@ a {
   background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 30px 30px;
+}
+
+.join-checkout-reveal {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(18px);
+  transition: max-height 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.join-checkout-reveal:target {
+  max-height: 2200px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .bg-theme-footer {
