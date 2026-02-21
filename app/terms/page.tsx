@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Gavel, RefreshCcw, ShieldCheck } from "lucide-react";
 import { LegalPageShell } from "@/components/legal/legal-page-shell";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
-const sections = [
+function buildSections(ageModeEnabled: boolean) {
+  return [
   {
     id: "agreement-and-eligibility",
     title: "Agreement and eligibility",
     points: [
       "By using this site, purchasing membership, or accessing member content, you agree to these Terms.",
-      "You must be at least 18 years old to use this service.",
+      ...(ageModeEnabled ? ["You must be at least 18 years old to use this service."] : []),
       "If you do not agree with these Terms, do not use the site or purchase membership."
     ]
   },
@@ -108,9 +110,20 @@ const sections = [
       "Continued use after updates means you accept the revised Terms."
     ]
   }
-] as const;
+  ] as const;
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  let ageModeEnabled = true;
+  try {
+    const settings = await getPublicSiteSettings();
+    ageModeEnabled = settings.ageModeEnabled;
+  } catch {
+    ageModeEnabled = true;
+  }
+
+  const sections = buildSections(ageModeEnabled);
+
   return (
     <LegalPageShell
       icon={Gavel}
@@ -121,8 +134,10 @@ export default function TermsPage() {
       highlights={[
         {
           icon: ShieldCheck,
-          title: "18+ restricted service",
-          detail: "Access is only for legally eligible adults who accept these terms."
+          title: ageModeEnabled ? "18+ restricted service" : "Restricted service",
+          detail: ageModeEnabled
+            ? "Access is only for legally eligible adults who accept these terms."
+            : "Access is only for eligible users who accept these terms."
         },
         {
           icon: Gavel,

@@ -26,11 +26,13 @@ type CreateSubscriptionResponse = {
 export function CheckoutPanel({
   compact = false,
   trackingPath,
-  directFlow = false
+  directFlow = false,
+  ageModeEnabled = true
 }: {
   compact?: boolean;
   trackingPath?: string;
   directFlow?: boolean;
+  ageModeEnabled?: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -284,7 +286,9 @@ export function CheckoutPanel({
           </Button>
           <p className="flex items-center gap-2 text-xs text-muted sm:text-sm">
             <ShieldCheck className="h-4 w-4 text-success" />
-            Secured by Razorpay. 18+ members only. No custom requests.
+            {ageModeEnabled
+              ? "Secured by Razorpay. 18+ members only. No custom requests."
+              : "Secured by Razorpay. No custom requests."}
           </p>
           <p className="text-[11px] leading-relaxed text-muted sm:text-xs">
             Membership unlock is enabled only after consent to{" "}

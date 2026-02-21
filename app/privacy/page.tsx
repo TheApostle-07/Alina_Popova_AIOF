@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Database, Lock, ShieldCheck } from "lucide-react";
 import { LegalPageShell } from "@/components/legal/legal-page-shell";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
 const collectedData = [
   "Contact data: email, phone, and optional support details you provide",
@@ -18,7 +19,15 @@ const usagePurposes = [
   "Maintain service security and uptime"
 ] as const;
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  let ageModeEnabled = true;
+  try {
+    const settings = await getPublicSiteSettings();
+    ageModeEnabled = settings.ageModeEnabled;
+  } catch {
+    ageModeEnabled = true;
+  }
+
   return (
     <LegalPageShell
       icon={ShieldCheck}
@@ -94,14 +103,18 @@ export default function PrivacyPage() {
             "You may request account data review or deletion, subject to required retention and anti-fraud safeguards."
           ]
         },
-        {
-          id: "age-restriction",
-          title: "Age restriction",
-          points: [
-            "This service is strictly 18+ only.",
-            "We do not knowingly provide service to minors. If a minor account is detected, access may be terminated."
-          ]
-        }
+        ...(ageModeEnabled
+          ? [
+              {
+                id: "age-restriction",
+                title: "Age restriction",
+                points: [
+                  "This service is strictly 18+ only.",
+                  "We do not knowingly provide service to minors. If a minor account is detected, access may be terminated."
+                ]
+              }
+            ]
+          : [])
       ]}
       outro={
         <p className="text-sm text-text">

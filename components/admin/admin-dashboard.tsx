@@ -182,6 +182,9 @@ type AdminTab = "analytics" | "upload" | "members" | "library";
 type ContentStatusFilter = "all" | ContentItem["status"];
 type ContentTypeFilter = "all" | ContentItem["type"];
 type GeoScope = "world" | "india";
+type AdminSiteSettings = {
+  ageModeEnabled: boolean;
+};
 
 const lookbackWindows = [7, 30, 90] as const;
 
@@ -638,6 +641,9 @@ function CustomDropdown<T extends string>({
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("analytics");
+  const [siteSettings, setSiteSettings] = useState<AdminSiteSettings>({ ageModeEnabled: true });
+  const [siteSettingsLoading, setSiteSettingsLoading] = useState(false);
+  const [siteSettingsSaving, setSiteSettingsSaving] = useState(false);
 
   const [metrics, setMetrics] = useState<MetricData | null>(null);
   const [daysWindow, setDaysWindow] = useState<(typeof lookbackWindows)[number]>(30);
@@ -713,6 +719,58 @@ export function AdminDashboard() {
       }
     },
     [analyticsDaysLoaded, analyticsLoadedAt, daysWindow]
+  );
+
+  const loadSiteSettings = useCallback(async () => {
+    try {
+      setSiteSettingsLoading(true);
+      const response = await fetch("/api/admin/settings", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Unable to load site settings");
+      }
+
+      setSiteSettings(payload.data as AdminSiteSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load site settings");
+    } finally {
+      setSiteSettingsLoading(false);
+    }
+  }, []);
+
+  const updateAgeMode = useCallback(
+    async (enabled: boolean) => {
+      try {
+        setSiteSettingsSaving(true);
+        const previous = siteSettings.ageModeEnabled;
+        setSiteSettings((current) => ({ ...current, ageModeEnabled: enabled }));
+
+        const response = await fetch("/api/admin/settings", {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({ ageModeEnabled: enabled })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          setSiteSettings((current) => ({ ...current, ageModeEnabled: previous }));
+          throw new Error(payload.error || "Unable to update site settings");
+        }
+
+        setSiteSettings(payload.data as AdminSiteSettings);
+        toast.success(
+          enabled
+            ? "18+ mode enabled: age checker and labels are active site-wide."
+            : "18+ mode disabled: age checker and labels are hidden site-wide."
+        );
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Unable to update site settings");
+      } finally {
+        setSiteSettingsSaving(false);
+      }
+    },
+    [siteSettings.ageModeEnabled]
   );
 
   const loadMembers = useCallback(
@@ -804,6 +862,10 @@ export function AdminDashboard() {
     },
     [contentLoadedAt, contentPagination.page, contentStatusFilter, contentTypeFilter]
   );
+
+  useEffect(() => {
+    void loadSiteSettings();
+  }, [loadSiteSettings]);
 
   useEffect(() => {
     if (activeTab === "analytics") {
@@ -1193,6 +1255,46 @@ export function AdminDashboard() {
                 <span className="text-xs opacity-85">{tabStats[tab.id as AdminTab]}</span>
               </Button>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/90 bg-surface/70">
+        <CardHeader className="space-y-1 p-4">
+          <CardTitle className="text-base">Global 18+ Mode</CardTitle>
+          <CardDescription>
+            One toggle controls both age-check modal enforcement and all 18+ labels across pages,
+            including legal pages.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 p-4 pt-0 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted">
+            Current status:{" "}
+            <span className={cn("font-medium", siteSettings.ageModeEnabled ? "text-accent" : "text-muted")}>
+              {siteSettingsLoading
+                ? "Loading..."
+                : siteSettings.ageModeEnabled
+                  ? "Enabled"
+                  : "Disabled"}
+            </span>
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={siteSettings.ageModeEnabled ? "default" : "secondary"}
+              onClick={() => void updateAgeMode(true)}
+              disabled={siteSettingsSaving || siteSettingsLoading}
+            >
+              Enable
+            </Button>
+            <Button
+              size="sm"
+              variant={!siteSettings.ageModeEnabled ? "default" : "secondary"}
+              onClick={() => void updateAgeMode(false)}
+              disabled={siteSettingsSaving || siteSettingsLoading}
+            >
+              Disable
+            </Button>
           </div>
         </CardContent>
       </Card>

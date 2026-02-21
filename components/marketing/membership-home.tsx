@@ -63,20 +63,29 @@ const valueCards = [
   }
 ] as const;
 
-const safetyCards = [
-  {
-    title: "18+ only",
-    body: "Age confirmation is required before entry."
-  },
-  {
-    title: "No custom requests / no DMs",
-    body: "This is a content membership only."
-  },
-  {
-    title: "No redistribution",
-    body: "Leaks or reposts result in permanent removal."
+function getSafetyCards(ageModeEnabled: boolean) {
+  const cards: Array<{ title: string; body: string }> = [];
+
+  if (ageModeEnabled) {
+    cards.push({
+      title: "18+ only",
+      body: "Age confirmation is required before entry."
+    });
   }
-] as const;
+
+  cards.push(
+    {
+      title: "No custom requests / no DMs",
+      body: "This is a content membership only."
+    },
+    {
+      title: "No redistribution",
+      body: "Leaks or reposts result in permanent removal."
+    }
+  );
+
+  return cards;
+}
 
 async function loadPreviewItems(): Promise<PreviewItem[]> {
   try {
@@ -124,15 +133,18 @@ function formatIST(value?: string | null) {
 
 export async function MembershipHome({
   path,
-  previewMode = "live"
+  previewMode = "live",
+  ageModeEnabled = true
 }: {
   path: string;
   previewMode?: "live" | "placeholder";
+  ageModeEnabled?: boolean;
 }) {
   const previewItems = previewMode === "live" ? await loadPreviewItems() : [];
   const heroPreview = previewItems[0]?.previewUrl;
   const heroPreviewVideo = previewItems[0]?.previewVideoUrl;
   const lastDropDate = formatIST(previewItems[0]?.publishAt);
+  const safetyCards = getSafetyCards(ageModeEnabled);
 
   return (
     <div className="space-y-14 pb-10 md:space-y-20 md:pb-8">
@@ -173,7 +185,11 @@ export async function MembershipHome({
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted">Secured by Razorpay • Cancel anytime • 18+ only</p>
+            <p className="text-sm text-muted">
+              {ageModeEnabled
+                ? "Secured by Razorpay • Cancel anytime • 18+ only"
+                : "Secured by Razorpay • Cancel anytime"}
+            </p>
             <NoGoZoneGate />
           </div>
         </div>
@@ -294,7 +310,7 @@ export async function MembershipHome({
 
       <section id="faq" className="space-y-4">
         <h2 className="text-2xl font-semibold md:text-3xl">Before you pay, quick answers</h2>
-        <FaqList />
+        <FaqList ageModeEnabled={ageModeEnabled} />
       </section>
 
       <section
@@ -324,7 +340,7 @@ export async function MembershipHome({
           </p>
         </div>
 
-        <CheckoutPanel compact trackingPath={path} />
+        <CheckoutPanel compact trackingPath={path} ageModeEnabled={ageModeEnabled} />
       </section>
     </div>
   );

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createBlurredVideoPreviewUrl } from "@/lib/cloudinary";
 import { IMAGE_BLUR_DATA_URL, MEMBERSHIP_PRICE_INR } from "@/lib/constants";
 import { getPreviewContent } from "@/lib/content-service";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
 type JoinVisual = {
   imageUrl?: string;
@@ -44,6 +45,13 @@ async function loadJoinVisual(): Promise<JoinVisual> {
 
 export default async function JoinPage() {
   const visual = await loadJoinVisual();
+  let ageModeEnabled = true;
+  try {
+    const settings = await getPublicSiteSettings();
+    ageModeEnabled = settings.ageModeEnabled;
+  } catch {
+    ageModeEnabled = true;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 md:space-y-10">
@@ -156,7 +164,8 @@ export default async function JoinPage() {
               <Crown className="h-4 w-4 text-[#F5C451]" /> VIP Area unlocks after active membership
             </p>
             <p className="flex items-center gap-2 text-sm text-muted">
-              <BadgeCheck className="h-4 w-4 text-success" /> 18+ only • No custom requests
+              <BadgeCheck className="h-4 w-4 text-success" />{" "}
+              {ageModeEnabled ? "18+ only • No custom requests" : "No custom requests"}
             </p>
           </CardContent>
         </Card>
@@ -178,7 +187,7 @@ export default async function JoinPage() {
             <NoGoZoneGate hintClassName="max-w-md" />
           </div>
 
-          <CheckoutPanel compact trackingPath="/join" directFlow />
+          <CheckoutPanel compact trackingPath="/join" directFlow ageModeEnabled={ageModeEnabled} />
         </div>
       </section>
     </div>

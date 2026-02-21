@@ -1,4 +1,5 @@
-const faqItems = [
+function getFaqItems(ageModeEnabled: boolean) {
+  const base = [
   {
     q: "How quickly do I unlock your private feed?",
     a: "Usually in seconds. If redirect fails, open Account and restore access with your checkout phone or email."
@@ -30,14 +31,21 @@ const faqItems = [
   {
     q: "Is this secure?",
     a: "Yes. Payments are secured by Razorpay and access is server-verified."
-  },
-  {
-    q: "Any age restrictions?",
-    a: "Yes. Membership is strictly 18+ only."
   }
-];
+  ];
 
-export function FaqList() {
+  if (ageModeEnabled) {
+    base.push({
+      q: "Any age restrictions?",
+      a: "Yes. Membership is strictly 18+ only."
+    });
+  }
+
+  return base;
+}
+
+export function FaqList({ ageModeEnabled = true }: { ageModeEnabled?: boolean }) {
+  const faqItems = getFaqItems(ageModeEnabled);
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {faqItems.map((item) => (

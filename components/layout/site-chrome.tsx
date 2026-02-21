@@ -61,7 +61,7 @@ function HeaderLink({
   );
 }
 
-function PublicFooter() {
+function PublicFooter({ ageModeEnabled }: { ageModeEnabled: boolean }) {
   return (
     <footer className="bg-theme-footer relative border-t border-border/80">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent" />
@@ -78,7 +78,7 @@ function PublicFooter() {
             </p>
             <p className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-bg/70 px-3 py-1 text-xs text-muted">
               <ShieldCheck className="h-3.5 w-3.5 text-success" />
-              Secured by Razorpay • 18+ only
+              {ageModeEnabled ? "Secured by Razorpay • 18+ only" : "Secured by Razorpay"}
             </p>
           </div>
 
@@ -137,7 +137,13 @@ function AdminFooter() {
   );
 }
 
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+export function SiteChrome({
+  children,
+  ageModeEnabled
+}: {
+  children: React.ReactNode;
+  ageModeEnabled: boolean;
+}) {
   const pathname = usePathname() || "/";
   const [sessionRole, setSessionRole] = useState<SessionRole>(() => {
     const inferred = inferRoleFromPath(pathname);
@@ -328,7 +334,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {showAdminNav && !isAdminLogin ? <AdminFooter /> : <PublicFooter />}
+      {showAdminNav && !isAdminLogin ? <AdminFooter /> : <PublicFooter ageModeEnabled={ageModeEnabled} />}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import { SiteChrome } from "@/components/layout/site-chrome";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
 import { BRAND_NAME } from "@/lib/constants";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 import "@/app/globals.css";
 
 const themeBootScript = `
@@ -22,6 +23,8 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"]
 });
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `${BRAND_NAME} Membership`,
@@ -46,7 +49,15 @@ export const viewport: Viewport = {
   ]
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let ageModeEnabled = true;
+  try {
+    const settings = await getPublicSiteSettings();
+    ageModeEnabled = settings.ageModeEnabled;
+  } catch {
+    ageModeEnabled = true;
+  }
+
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
@@ -59,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="//res.cloudinary.com" />
       </head>
       <body className={`${poppins.className} bg-grid antialiased`}>
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome ageModeEnabled={ageModeEnabled}>{children}</SiteChrome>
         <ToasterProvider />
       </body>
     </html>

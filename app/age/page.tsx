@@ -15,6 +15,7 @@ export default function AgeGatePage() {
   const params = useSearchParams();
   const router = useRouter();
   const [declined, setDeclined] = useState(false);
+  const [ageModeEnabled, setAgeModeEnabled] = useState(true);
 
   const nextPath = useMemo(() => params.get("next") || "/", [params]);
 
@@ -22,6 +23,32 @@ export default function AgeGatePage() {
     if (document.cookie.includes(`${AGE_DECLINED_COOKIE_NAME}=1`)) {
       setDeclined(true);
     }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/public/settings", {
+          method: "GET",
+          cache: "no-store"
+        });
+        const payload = await response.json().catch(() => null);
+        if (!cancelled && response.ok && payload?.ok) {
+          setAgeModeEnabled(Boolean(payload.data?.ageModeEnabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setAgeModeEnabled(true);
+        }
+      }
+    };
+
+    void loadSettings();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const accept = () => {
@@ -36,6 +63,26 @@ export default function AgeGatePage() {
     setCookie(AGE_DECLINED_COOKIE_NAME, "1", 60 * 60 * 24 * 30);
     setDeclined(true);
   };
+
+  if (!ageModeEnabled) {
+    return (
+      <div className="relative mx-auto flex min-h-[78vh] w-full max-w-3xl items-center justify-center py-8">
+        <Card className="w-full border-border/90">
+          <CardHeader>
+            <CardTitle>Age checker is disabled</CardTitle>
+            <CardDescription>
+              Admin has currently disabled age-gate enforcement for this site.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" size="lg" onClick={() => router.replace(nextPath)}>
+              Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="relative mx-auto flex min-h-[78vh] w-full max-w-3xl items-center justify-center py-8">
