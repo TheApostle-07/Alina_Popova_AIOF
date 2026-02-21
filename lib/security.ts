@@ -21,21 +21,32 @@ function getSecFetchSite(request: Request) {
 
 function isLikelySameSiteRequest(request: Request) {
   const secFetchSite = getSecFetchSite(request);
-  return secFetchSite === "" || secFetchSite === "same-origin" || secFetchSite === "same-site";
+  return (
+    secFetchSite === "" ||
+    secFetchSite === "same-origin" ||
+    secFetchSite === "same-site" ||
+    secFetchSite === "none"
+  );
 }
 
 export function assertSameOrigin(request: Request) {
   const allowedOrigins = new Set(getAllowedOrigins(request));
   const originHeader = request.headers.get("origin");
   const normalizedOrigin = normalizeOrigin(originHeader);
+  const refererHeader = request.headers.get("referer");
+  const normalizedRefererOrigin = normalizeOrigin(refererHeader);
+  const secFetchSite = getSecFetchSite(request);
+  const requestOrigin = normalizeOrigin(request.url);
+
+  const buildOriginError = () =>
+    `Invalid request origin: origin=${originHeader || "n/a"} referer=${refererHeader || "n/a"} secFetchSite=${secFetchSite || "n/a"} requestOrigin=${requestOrigin || "n/a"} allowedOrigins=${Array.from(allowedOrigins).join(",")}`;
 
   if (originHeader && originHeader.toLowerCase() !== "null") {
     if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
       return;
     }
 
-    const refererOrigin = normalizeOrigin(request.headers.get("referer"));
-    if (refererOrigin && allowedOrigins.has(refererOrigin) && isLikelySameSiteRequest(request)) {
+    if (normalizedRefererOrigin && allowedOrigins.has(normalizedRefererOrigin) && isLikelySameSiteRequest(request)) {
       return;
     }
 
@@ -43,11 +54,9 @@ export function assertSameOrigin(request: Request) {
       return;
     }
 
-    throw new Error("Invalid request origin");
+    throw new Error(buildOriginError());
   }
 
-  const refererHeader = request.headers.get("referer");
-  const normalizedRefererOrigin = normalizeOrigin(refererHeader);
   if (normalizedRefererOrigin && allowedOrigins.has(normalizedRefererOrigin)) {
     return;
   }
@@ -56,7 +65,7 @@ export function assertSameOrigin(request: Request) {
     return;
   }
 
-  throw new Error("Invalid request origin");
+  throw new Error(buildOriginError());
 }
 
 export function assertAdminIpAllowed(ip: string) {

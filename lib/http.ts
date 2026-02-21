@@ -72,11 +72,11 @@ export function handleApiError(input: HandleApiErrorInput) {
     error: errorMessage
   });
 
-  if (errorMessage === "Invalid request origin") {
+  if (errorMessage.startsWith("Invalid request origin")) {
     return jsonError("Invalid request origin", 403, { requestId });
   }
 
-  if (errorMessage === "IP address is not allowed") {
+  if (errorMessage.startsWith("IP address is not allowed")) {
     return jsonError("Forbidden", 403, { requestId });
   }
 
