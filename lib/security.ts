@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import { getEnv, getOptionalSiteUrl } from "@/lib/env";
+import { getEnv } from "@/lib/env";
+import { getAllowedOrigins, normalizeOrigin } from "@/lib/origin";
 
 export function hashPayload(payload: string) {
   return crypto.createHash("sha256").update(payload).digest("hex");
@@ -20,9 +21,13 @@ export function assertSameOrigin(request: Request) {
     return;
   }
 
-  const site = getOptionalSiteUrl();
-  const expected = new URL(site).origin;
-  if (origin !== expected) {
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) {
+    throw new Error("Invalid request origin");
+  }
+
+  const allowedOrigins = getAllowedOrigins(request);
+  if (!allowedOrigins.includes(normalizedOrigin)) {
     throw new Error("Invalid request origin");
   }
 }

@@ -7,8 +7,64 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AGE_COOKIE_NAME, AGE_DECLINED_COOKIE_NAME } from "@/lib/constants";
 
+function sanitizeNextPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+  return value;
+}
+
 function setCookie(name: string, value: string, maxAge: number) {
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; samesite=lax`;
+  const secure = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
+}
+
+function clearCookie(name: string) {
+  const secure = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${name}=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax${secure}`;
+}
+
+function hasCookie(name: string, expectedValue?: string) {
+  const cookieEntries = (document.cookie || "")
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  for (const entry of cookieEntries) {
+    if (!entry.startsWith(`${name}=`)) {
+      continue;
+    }
+
+    if (expectedValue === undefined) {
+      return true;
+    }
+
+    const rawValue = entry.slice(name.length + 1);
+    try {
+      return decodeURIComponent(rawValue) === expectedValue;
+    } catch {
+      return rawValue === expectedValue;
+    }
+  }
+
+  return false;
+}
+
+function safeStorageSet(name: string, value: string) {
+  try {
+    localStorage.setItem(name, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function safeStorageRemove(name: string) {
+  try {
+    localStorage.removeItem(name);
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 export default function AgeGatePage() {
@@ -16,8 +72,10 @@ export default function AgeGatePage() {
   const router = useRouter();
   const [declined, setDeclined] = useState(false);
   const [ageModeEnabled, setAgeModeEnabled] = useState(true);
+  const [busy, setBusy] = useState<"accept" | "reject" | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
 
-  const nextPath = useMemo(() => params.get("next") || "/", [params]);
+  const nextPath = useMemo(() => sanitizeNextPath(params.get("next")), [params]);
 
   useEffect(() => {
     if (document.cookie.includes(`${AGE_DECLINED_COOKIE_NAME}=1`)) {
@@ -52,16 +110,39 @@ export default function AgeGatePage() {
   }, []);
 
   const accept = () => {
-    localStorage.setItem("alina_age_verified", "1");
+    if (busy) {
+      return;
+    }
+
+    setBusy("accept");
+    setErrorText(null);
+
+    safeStorageSet(AGE_COOKIE_NAME, "1");
     setCookie(AGE_COOKIE_NAME, "1", 60 * 60 * 24 * 365);
-    setCookie(AGE_DECLINED_COOKIE_NAME, "", 0);
-    router.replace(nextPath);
+    clearCookie(AGE_DECLINED_COOKIE_NAME);
+    setDeclined(false);
+
+    if (!hasCookie(AGE_COOKIE_NAME, "1")) {
+      setBusy(null);
+      setErrorText("Unable to continue because cookies are blocked. Please enable cookies and try again.");
+      return;
+    }
+
+    window.location.replace(nextPath);
   };
 
   const reject = () => {
-    localStorage.removeItem("alina_age_verified");
+    if (busy) {
+      return;
+    }
+
+    setBusy("reject");
+    setErrorText(null);
+
+    safeStorageRemove(AGE_COOKIE_NAME);
     setCookie(AGE_DECLINED_COOKIE_NAME, "1", 60 * 60 * 24 * 30);
     setDeclined(true);
+    setBusy(null);
   };
 
   if (!ageModeEnabled) {
@@ -121,8 +202,13 @@ export default function AgeGatePage() {
         </CardHeader>
 
         <CardContent className="space-y-3 p-6 pt-0 sm:p-8 sm:pt-0">
-          <Button className="h-14 w-full rounded-2xl text-lg font-semibold" size="lg" onClick={accept}>
-            I am 18+ and continue
+          <Button
+            className="h-14 w-full rounded-2xl text-lg font-semibold"
+            size="lg"
+            onClick={accept}
+            disabled={busy !== null}
+          >
+            {busy === "accept" ? "Continuing..." : "I am 18+ and continue"}
             <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
 
@@ -131,6 +217,7 @@ export default function AgeGatePage() {
             variant="secondary"
             size="lg"
             onClick={reject}
+            disabled={busy !== null}
           >
             I am under 18
           </Button>
@@ -138,6 +225,13 @@ export default function AgeGatePage() {
           <p className="pt-1 text-xs text-muted">
             You can leave now and return when eligible.
           </p>
+
+          {errorText ? (
+            <div className="flex items-start gap-2 rounded-xl border border-danger/35 bg-danger/10 px-3 py-2 text-sm text-danger">
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              {errorText}
+            </div>
+          ) : null}
 
           {declined ? (
             <div className="flex items-start gap-2 rounded-xl border border-warning/35 bg-warning/10 px-3 py-2 text-sm text-warning">

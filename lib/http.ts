@@ -65,11 +65,20 @@ type HandleApiErrorInput = {
 
 export function handleApiError(input: HandleApiErrorInput) {
   const requestId = getRequestId(input.request);
+  const errorMessage = input.error instanceof Error ? input.error.message : "Unknown error";
   logError("api_error", {
     route: input.route,
     requestId,
-    error: input.error instanceof Error ? input.error.message : "Unknown error"
+    error: errorMessage
   });
+
+  if (errorMessage === "Invalid request origin") {
+    return jsonError("Invalid request origin", 403, { requestId });
+  }
+
+  if (errorMessage === "IP address is not allowed") {
+    return jsonError("Forbidden", 403, { requestId });
+  }
 
   return jsonError(input.fallbackMessage || "Request failed", 500, { requestId });
 }

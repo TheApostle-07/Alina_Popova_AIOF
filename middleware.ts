@@ -5,7 +5,8 @@ import {
   AGE_DECLINED_COOKIE_NAME,
   MEMBER_COOKIE_NAME
 } from "@/lib/constants";
-import { applyApiCorsHeaders, applySecurityHeaders, getAllowedOrigin } from "@/lib/security-headers";
+import { getAllowedOrigins, normalizeOrigin } from "@/lib/origin";
+import { applyApiCorsHeaders, applySecurityHeaders } from "@/lib/security-headers";
 import { getRequestId } from "@/lib/request";
 
 const SITE_SETTINGS_CACHE_TTL_MS = 30_000;
@@ -70,7 +71,7 @@ function withSecurityHeaders(request: NextRequest, response: NextResponse) {
   applySecurityHeaders(response.headers);
   if (request.nextUrl.pathname.startsWith("/api")) {
     const requestOrigin = request.headers.get("origin");
-    applyApiCorsHeaders(response.headers, requestOrigin);
+    applyApiCorsHeaders(response.headers, requestOrigin, request);
   }
   return response;
 }
@@ -81,8 +82,9 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/api")) {
     if (request.method === "OPTIONS") {
       const requestOrigin = request.headers.get("origin");
-      const allowedOrigin = getAllowedOrigin();
-      if (requestOrigin && requestOrigin !== allowedOrigin) {
+      const allowedOrigins = getAllowedOrigins(request);
+      const normalizedRequestOrigin = normalizeOrigin(requestOrigin);
+      if (normalizedRequestOrigin && !allowedOrigins.includes(normalizedRequestOrigin)) {
         return withSecurityHeaders(
           request,
           NextResponse.json({ ok: false, error: "Forbidden origin" }, { status: 403 })

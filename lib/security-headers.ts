@@ -1,11 +1,10 @@
-import { getOptionalSiteUrl } from "@/lib/env";
+import { getAllowedOrigins, normalizeOrigin } from "@/lib/origin";
 
 const RAZORPAY_ORIGINS = ["https://checkout.razorpay.com", "https://api.razorpay.com"];
 const CLOUDINARY_ORIGINS = ["https://res.cloudinary.com"];
 
 export function getAllowedOrigin() {
-  const site = getOptionalSiteUrl();
-  return new URL(site).origin;
+  return getAllowedOrigins()[0] || "http://localhost:3000";
 }
 
 function buildCsp() {
@@ -58,14 +57,15 @@ export function applySecurityHeaders(headers: Headers) {
   }
 }
 
-export function applyApiCorsHeaders(headers: Headers, requestOrigin: string | null) {
-  const allowedOrigin = getAllowedOrigin();
+export function applyApiCorsHeaders(headers: Headers, requestOrigin: string | null, request?: Request) {
+  const allowedOrigins = getAllowedOrigins(request);
+  const normalizedOrigin = normalizeOrigin(requestOrigin);
   headers.set("Vary", "Origin");
   headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-Id, X-Cron-Secret");
   headers.set("Access-Control-Allow-Credentials", "true");
 
-  if (requestOrigin && requestOrigin === allowedOrigin) {
-    headers.set("Access-Control-Allow-Origin", allowedOrigin);
+  if (normalizedOrigin && allowedOrigins.includes(normalizedOrigin)) {
+    headers.set("Access-Control-Allow-Origin", normalizedOrigin);
   }
 }
