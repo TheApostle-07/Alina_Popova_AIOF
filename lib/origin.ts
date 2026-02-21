@@ -36,23 +36,38 @@ function originFromDomainValue(value: string | undefined) {
   return normalizeOrigin(normalizedValue);
 }
 
-function originFromRequestHost(request: Request) {
-  const urlOrigin = normalizeOrigin(request.url);
-  if (urlOrigin) {
-    return urlOrigin;
+function getRequestHeaderValue(request: Request, key: string) {
+  const raw = request.headers.get(key) || "";
+  return raw.split(",")[0]?.trim() || "";
+}
+
+function getRequestOrigins(request: Request) {
+  const origins = new Set<string>();
+
+  const fromUrl = normalizeOrigin(request.url);
+  if (fromUrl) {
+    origins.add(fromUrl);
   }
 
-  const forwardedProto = request.headers.get("x-forwarded-proto") || "";
-  const firstProto = forwardedProto.split(",")[0]?.trim();
-  const protocol = firstProto || (process.env.NODE_ENV === "production" ? "https" : "http");
+  const forwardedProto = getRequestHeaderValue(request, "x-forwarded-proto");
+  const protocol =
+    forwardedProto ||
+    (fromUrl ? new URL(fromUrl).protocol.replace(":", "") : "") ||
+    (process.env.NODE_ENV === "production" ? "https" : "http");
 
-  const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
-  const host = forwardedHost.split(",")[0]?.trim();
-  if (!host) {
-    return null;
+  const candidateHosts = [
+    getRequestHeaderValue(request, "x-forwarded-host"),
+    getRequestHeaderValue(request, "host")
+  ].filter(Boolean);
+
+  for (const candidateHost of candidateHosts) {
+    const hostOrigin = normalizeOrigin(`${protocol}://${candidateHost}`);
+    if (hostOrigin) {
+      origins.add(hostOrigin);
+    }
   }
 
-  return normalizeOrigin(`${protocol}://${host}`);
+  return Array.from(origins);
 }
 
 export function getAllowedOrigins(request?: Request) {
@@ -71,8 +86,8 @@ export function getAllowedOrigins(request?: Request) {
   }
 
   if (request) {
-    const requestOrigin = originFromRequestHost(request);
-    if (requestOrigin) {
+    const requestOrigins = getRequestOrigins(request);
+    for (const requestOrigin of requestOrigins) {
       allowed.add(requestOrigin);
     }
   }

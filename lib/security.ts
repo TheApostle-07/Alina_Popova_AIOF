@@ -16,20 +16,35 @@ export function safeCompare(a: string, b: string) {
 }
 
 export function assertSameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  if (!origin) {
+  const allowedOrigins = new Set(getAllowedOrigins(request));
+  const originHeader = request.headers.get("origin");
+  const normalizedOrigin = normalizeOrigin(originHeader);
+
+  if (originHeader && originHeader.toLowerCase() !== "null") {
+    if (!normalizedOrigin || !allowedOrigins.has(normalizedOrigin)) {
+      throw new Error("Invalid request origin");
+    }
     return;
   }
 
-  const normalizedOrigin = normalizeOrigin(origin);
-  if (!normalizedOrigin) {
-    throw new Error("Invalid request origin");
+  const refererHeader = request.headers.get("referer");
+  const normalizedRefererOrigin = normalizeOrigin(refererHeader);
+  if (normalizedRefererOrigin && allowedOrigins.has(normalizedRefererOrigin)) {
+    return;
   }
 
-  const allowedOrigins = getAllowedOrigins(request);
-  if (!allowedOrigins.includes(normalizedOrigin)) {
-    throw new Error("Invalid request origin");
+  const secFetchSite = (request.headers.get("sec-fetch-site") || "").toLowerCase();
+  const isLikelySameSite =
+    secFetchSite === "" ||
+    secFetchSite === "same-origin" ||
+    secFetchSite === "same-site" ||
+    secFetchSite === "none";
+
+  if (isLikelySameSite) {
+    return;
   }
+
+  throw new Error("Invalid request origin");
 }
 
 export function assertAdminIpAllowed(ip: string) {
