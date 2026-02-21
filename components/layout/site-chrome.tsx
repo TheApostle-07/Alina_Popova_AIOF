@@ -253,7 +253,7 @@ export function SiteChrome({
         className="pointer-events-none fixed right-3 top-[4.5rem] z-[58] sm:right-4 sm:top-[4.85rem]"
         aria-label="Theme control"
       >
-        <ThemeToggle className="pointer-events-auto h-7 w-7 rounded-full sm:h-8 sm:w-8" />
+        <ThemeToggle className="pointer-events-auto h-9 w-9 rounded-xl sm:h-10 sm:w-10" />
       </div>
 
       <header className="sticky top-0 z-50 border-b border-border/80 bg-bg/80 backdrop-blur" role="banner">

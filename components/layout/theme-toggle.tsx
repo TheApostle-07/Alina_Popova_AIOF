@@ -3,41 +3,57 @@
 import { useEffect, useState } from "react";
 import { MoonStar, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { applyTheme, readPersistedTheme, resolveTheme, setTheme as setAndPersistTheme } from "@/lib/theme-client";
+import {
+  type AppTheme,
+  DEFAULT_THEME,
+  THEME_CHANGE_EVENT,
+  THEME_STORAGE_KEY,
+  sanitizeTheme
+} from "@/lib/theme";
 import { cn } from "@/lib/utils";
-
-type Theme = "dark" | "light";
-
-const STORAGE_KEY = "alina_theme";
-
-function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme;
-}
 
 export function ThemeToggle({ className }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<AppTheme>(DEFAULT_THEME);
 
   useEffect(() => {
+    const initialTheme = resolveTheme(DEFAULT_THEME);
+    applyTheme(initialTheme);
+    setTheme(initialTheme);
     setMounted(true);
-    const rootTheme = document.documentElement.dataset.theme;
-    if (rootTheme === "light" || rootTheme === "dark") {
-      setTheme(rootTheme);
-      return;
-    }
 
-    setTheme("dark");
-    applyTheme("dark");
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY) {
+        return;
+      }
+
+      const nextTheme = sanitizeTheme(event.newValue) ?? readPersistedTheme() ?? DEFAULT_THEME;
+      applyTheme(nextTheme);
+      setTheme(nextTheme);
+    };
+
+    const handleThemeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ theme?: AppTheme }>;
+      const hintedTheme = sanitizeTheme(customEvent.detail?.theme);
+      const nextTheme = hintedTheme ?? resolveTheme(DEFAULT_THEME);
+      applyTheme(nextTheme);
+      setTheme(nextTheme);
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange as EventListener);
+    };
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    const nextTheme: AppTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
-    applyTheme(nextTheme);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, nextTheme);
-    } catch {
-      // Ignore storage write failures (private mode / strict browsers).
-    }
+    setAndPersistTheme(nextTheme);
   };
 
   if (!mounted) {

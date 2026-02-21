@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resolveTheme } from "@/lib/theme-client";
+import { DEFAULT_THEME } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 type RestoreStatus =
@@ -54,21 +56,7 @@ function isValidPhoneNumber(value: string) {
 }
 
 function resolveUiThemeForEmail(): "dark" | "light" {
-  try {
-    const stored = window.localStorage.getItem("alina_theme");
-    if (stored === "dark" || stored === "light") {
-      return stored;
-    }
-  } catch {
-    // Ignore localStorage read failures.
-  }
-
-  const rootTheme = document.documentElement.dataset.theme;
-  if (rootTheme === "dark" || rootTheme === "light") {
-    return rootTheme;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return resolveTheme(DEFAULT_THEME);
 }
 
 export function RestoreForm({
