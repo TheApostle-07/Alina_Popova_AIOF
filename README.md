@@ -150,7 +150,6 @@ Optional:
 - `SMTP_USER`
 - `SMTP_PASS`
 - `SUPPORT_TO_EMAIL`
-- `NO_GO_ZONE_URL` (members-only redirect destination)
 - `UPSTASH_REDIS_REST_URL` (for distributed rate limiting)
 - `UPSTASH_REDIS_REST_TOKEN` (for distributed rate limiting)
 - `ADMIN_IP_ALLOWLIST` (comma separated CIDRs/IPs for admin login)

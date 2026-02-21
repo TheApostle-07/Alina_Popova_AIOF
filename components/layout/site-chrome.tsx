@@ -23,7 +23,7 @@ function inferRoleFromPath(pathname: string): SessionRole | null {
     return "admin";
   }
 
-  if (pathname.startsWith("/access") || pathname.startsWith("/no-go-zone")) {
+  if (pathname.startsWith("/access") || pathname.startsWith("/no-go-zone") || pathname.startsWith("/vip")) {
     return "member";
   }
 
@@ -127,6 +127,9 @@ function AdminFooter() {
         <nav className="flex items-center gap-3" aria-label="Admin footer links">
           <IntentLink href="/admin" className="hover:text-text">
             Dashboard
+          </IntentLink>
+          <IntentLink href="/admin/vip" className="hover:text-text">
+            VIP auctions
           </IntentLink>
           <IntentLink href="/support" className="hover:text-text">
             Support
@@ -287,6 +290,7 @@ export function SiteChrome({
               {isMemberContext ? (
                 <>
                   <HeaderLink pathname={pathname} href="/access" label="Home" />
+                  <HeaderLink pathname={pathname} href="/vip" label="VIP" />
                   <HeaderLink pathname={pathname} href="/account" label="Account" />
                   <HeaderLink pathname={pathname} href="/support" label="Support" />
                 </>
@@ -314,6 +318,7 @@ export function SiteChrome({
               ) : (
                 <>
                   <HeaderLink pathname={pathname} href="/admin" label="Dashboard" />
+                  <HeaderLink pathname={pathname} href="/admin/vip" label="VIP" />
                   <HeaderLink pathname={pathname} href="/support" label="Support" />
                 </>
               )}

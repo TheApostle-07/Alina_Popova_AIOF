@@ -1,25 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MoonStar, SunMedium } from "lucide-react";
+import { Monitor, MoonStar, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { applyTheme, readPersistedTheme, resolveTheme, setTheme as setAndPersistTheme } from "@/lib/theme-client";
+import {
+  applyTheme,
+  readPersistedThemePreference,
+  resolveTheme,
+  resolveThemePreference,
+  setTheme as setAndPersistTheme
+} from "@/lib/theme-client";
 import {
   type AppTheme,
+  type ThemePreference,
+  DEFAULT_THEME_PREFERENCE,
   DEFAULT_THEME,
+  nextThemePreference,
   THEME_CHANGE_EVENT,
   THEME_STORAGE_KEY,
+  resolveThemeFromPreference,
+  sanitizeThemePreference,
   sanitizeTheme
 } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
+  const [preference, setPreference] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
   const [theme, setTheme] = useState<AppTheme>(DEFAULT_THEME);
 
   useEffect(() => {
+    const initialPreference = resolveThemePreference(DEFAULT_THEME_PREFERENCE);
     const initialTheme = resolveTheme(DEFAULT_THEME);
-    applyTheme(initialTheme);
+    applyTheme(initialTheme, initialPreference);
+    setPreference(initialPreference);
     setTheme(initialTheme);
     setMounted(true);
 
@@ -28,32 +42,71 @@ export function ThemeToggle({ className }: { className?: string }) {
         return;
       }
 
-      const nextTheme = sanitizeTheme(event.newValue) ?? readPersistedTheme() ?? DEFAULT_THEME;
-      applyTheme(nextTheme);
+      const nextPreference =
+        sanitizeThemePreference(event.newValue) ??
+        readPersistedThemePreference() ??
+        DEFAULT_THEME_PREFERENCE;
+      const nextTheme = resolveThemeFromPreference(nextPreference, DEFAULT_THEME);
+      applyTheme(nextTheme, nextPreference);
+      setPreference(nextPreference);
       setTheme(nextTheme);
     };
 
     const handleThemeChange = (event: Event) => {
-      const customEvent = event as CustomEvent<{ theme?: AppTheme }>;
+      const customEvent = event as CustomEvent<{
+        theme?: AppTheme;
+        preference?: ThemePreference;
+      }>;
       const hintedTheme = sanitizeTheme(customEvent.detail?.theme);
-      const nextTheme = hintedTheme ?? resolveTheme(DEFAULT_THEME);
-      applyTheme(nextTheme);
+      const hintedPreference = sanitizeThemePreference(customEvent.detail?.preference);
+      const nextPreference = hintedPreference ?? resolveThemePreference(DEFAULT_THEME_PREFERENCE);
+      const nextTheme = hintedTheme ?? resolveThemeFromPreference(nextPreference, DEFAULT_THEME);
+      applyTheme(nextTheme, nextPreference);
+      setPreference(nextPreference);
+      setTheme(nextTheme);
+    };
+
+    const mediaQuery =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-color-scheme: dark)")
+        : null;
+
+    const handleSystemThemeChange = () => {
+      const nextPreference = resolveThemePreference(DEFAULT_THEME_PREFERENCE);
+      if (nextPreference !== "auto") {
+        return;
+      }
+
+      const nextTheme = resolveThemeFromPreference(nextPreference, DEFAULT_THEME);
+      applyTheme(nextTheme, nextPreference);
+      setPreference(nextPreference);
       setTheme(nextTheme);
     };
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange as EventListener);
+    if (mediaQuery?.addEventListener) {
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+    } else if (mediaQuery?.addListener) {
+      mediaQuery.addListener(handleSystemThemeChange);
+    }
 
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange as EventListener);
+      if (mediaQuery?.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleSystemThemeChange);
+      } else if (mediaQuery?.removeListener) {
+        mediaQuery.removeListener(handleSystemThemeChange);
+      }
     };
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme: AppTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    setAndPersistTheme(nextTheme);
+    const nextPreference = nextThemePreference(preference);
+    const resolvedTheme = setAndPersistTheme(nextPreference);
+    setPreference(nextPreference);
+    setTheme(resolvedTheme);
   };
 
   if (!mounted) {
@@ -66,7 +119,13 @@ export function ThemeToggle({ className }: { className?: string }) {
   }
 
   const isLight = theme === "light";
-  const label = isLight ? "Switch to dark mode" : "Switch to light mode";
+  const label =
+    preference === "auto"
+      ? `Theme: Auto (currently ${isLight ? "Light" : "Dark"})`
+      : preference === "light"
+        ? "Theme: Light"
+        : "Theme: Dark";
+  const Icon = preference === "auto" ? Monitor : isLight ? SunMedium : MoonStar;
 
   return (
     <Button
@@ -81,7 +140,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         className
       )}
     >
-      {isLight ? <MoonStar className="h-4.5 w-4.5" /> : <SunMedium className="h-4.5 w-4.5" />}
+      <Icon className="h-4.5 w-4.5" />
     </Button>
   );
 }

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const email = normalizeEmail(parsedBody.data.email || "");
     const phone = normalizePhone(parsedBody.data.phone || "");
-    const requestedTheme = parsedBody.data.theme || "dark";
+    const requestedTheme = parsedBody.data.theme || "auto";
 
     const identityKey = email || phone || ip;
     const identifierRate = await consumeRateLimit(

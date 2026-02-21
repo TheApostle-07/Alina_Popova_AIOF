@@ -6,6 +6,7 @@ import { SubscriptionModel } from "@/lib/models/subscription";
 import { updateActiveMembersMetric } from "@/lib/metrics";
 import { safeCompare } from "@/lib/security";
 import { reconcileSubscriptionByRazorpayId } from "@/lib/subscription-service";
+import { runVipAuctionHousekeeping } from "@/lib/vip-service";
 
 export const runtime = "nodejs";
 
@@ -52,13 +53,15 @@ async function runReconciliation() {
   }
 
   const activeMembers = await updateActiveMembersMetric();
+  const vip = await runVipAuctionHousekeeping(220);
 
   return {
     scanned: subscriptions.length,
     reconciled: successCount,
     failed: failures.length,
     failures,
-    activeMembers
+    activeMembers,
+    vip
   };
 }
 

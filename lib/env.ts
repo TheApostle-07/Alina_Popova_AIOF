@@ -24,7 +24,6 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: emptyToUndefined(z.string().trim().url().optional()),
   UPSTASH_REDIS_REST_TOKEN: emptyToUndefined(z.string().trim().min(20).optional()),
   ADMIN_IP_ALLOWLIST: emptyToUndefined(z.string().trim().optional()),
-  NO_GO_ZONE_URL: emptyToUndefined(z.string().trim().url().optional()),
   SMTP_HOST: emptyToUndefined(z.string().trim().optional()),
   SMTP_PORT: emptyToUndefined(z.coerce.number().int().min(1).max(65535).optional()),
   SMTP_USER: emptyToUndefined(z.string().trim().optional()),

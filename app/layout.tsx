@@ -7,25 +7,32 @@ import { BRAND_NAME } from "@/lib/constants";
 import { getPublicSiteSettings } from "@/lib/site-settings";
 import {
   DEFAULT_THEME,
+  DEFAULT_THEME_PREFERENCE,
+  THEME_CHANGE_EVENT,
   THEME_COLORS,
   THEME_COOKIE_KEY,
   THEME_COOKIE_MAX_AGE_SECONDS,
   THEME_STORAGE_KEY,
-  sanitizeTheme
+  isAppTheme,
+  sanitizeThemePreference,
 } from "@/lib/theme";
 import "@/app/globals.css";
 
 const themeBootScript = `
 (() => {
   const DEFAULT_THEME = ${JSON.stringify(DEFAULT_THEME)};
+  const DEFAULT_PREFERENCE = ${JSON.stringify(DEFAULT_THEME_PREFERENCE)};
+  const THEME_CHANGE_EVENT = ${JSON.stringify(THEME_CHANGE_EVENT)};
   const STORAGE_KEY = ${JSON.stringify(THEME_STORAGE_KEY)};
   const COOKIE_KEY = ${JSON.stringify(THEME_COOKIE_KEY)};
   const COOKIE_MAX_AGE = ${THEME_COOKIE_MAX_AGE_SECONDS};
   const COLORS = ${JSON.stringify(THEME_COLORS)};
   const META_SELECTOR = "meta[name='theme-color'][data-dynamic-theme='1']";
 
-  const sanitize = (value) => (value === "dark" || value === "light" ? value : null);
-  const parseCookieTheme = () => {
+  const sanitizePreference = (value) =>
+    value === "auto" || value === "dark" || value === "light" ? value : null;
+
+  const parseCookiePreference = () => {
     const raw = document.cookie || "";
     if (!raw) {
       return null;
@@ -40,18 +47,35 @@ const themeBootScript = `
 
       const cookieValue = trimmed.slice(COOKIE_KEY.length + 1);
       try {
-        return sanitize(decodeURIComponent(cookieValue));
+        return sanitizePreference(decodeURIComponent(cookieValue));
       } catch {
-        return sanitize(cookieValue);
+        return sanitizePreference(cookieValue);
       }
     }
 
     return null;
   };
 
-  const applyTheme = (theme) => {
+  const resolveAutoTheme = () => {
+    try {
+      if (typeof window.matchMedia === "function") {
+        return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+    } catch {
+      // Ignore and use time fallback.
+    }
+
+    const hour = new Date().getHours();
+    return hour >= 7 && hour < 19 ? "light" : DEFAULT_THEME;
+  };
+
+  const resolveThemeFromPreference = (preference) =>
+    preference === "auto" ? resolveAutoTheme() : preference;
+
+  const applyTheme = (theme, preference) => {
     const root = document.documentElement;
     root.dataset.theme = theme;
+    root.dataset.themePreference = preference;
     root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
 
@@ -61,32 +85,59 @@ const themeBootScript = `
     }
   };
 
-  const persistTheme = (theme) => {
+  const persistThemePreference = (preference) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, theme);
+      window.localStorage.setItem(STORAGE_KEY, preference);
     } catch {
       // Ignore storage failures.
     }
 
     try {
       const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
-      document.cookie = COOKIE_KEY + "=" + encodeURIComponent(theme) + "; Path=/; Max-Age=" + COOKIE_MAX_AGE + "; SameSite=Lax" + secureFlag;
+      document.cookie = COOKIE_KEY + "=" + encodeURIComponent(preference) + "; Path=/; Max-Age=" + COOKIE_MAX_AGE + "; SameSite=Lax" + secureFlag;
     } catch {
       // Ignore cookie failures.
     }
   };
 
-  let resolvedTheme = DEFAULT_THEME;
+  let resolvedPreference = DEFAULT_PREFERENCE;
   try {
-    const storedTheme = sanitize(window.localStorage.getItem(STORAGE_KEY));
-    const cookieTheme = parseCookieTheme();
-    resolvedTheme = storedTheme || cookieTheme || DEFAULT_THEME;
+    const storedPreference = sanitizePreference(window.localStorage.getItem(STORAGE_KEY));
+    const cookiePreference = parseCookiePreference();
+    resolvedPreference = storedPreference || cookiePreference || DEFAULT_PREFERENCE;
   } catch {
-    resolvedTheme = parseCookieTheme() || DEFAULT_THEME;
+    resolvedPreference = parseCookiePreference() || DEFAULT_PREFERENCE;
   }
 
-  applyTheme(resolvedTheme);
-  persistTheme(resolvedTheme);
+  const resolvedTheme = resolveThemeFromPreference(resolvedPreference);
+  applyTheme(resolvedTheme, resolvedPreference);
+  persistThemePreference(resolvedPreference);
+
+  if (typeof window.matchMedia === "function") {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSystemThemeChange = () => {
+      const rootPreference = sanitizePreference(document.documentElement.dataset.themePreference);
+      if (rootPreference !== "auto") {
+        return;
+      }
+      const nextTheme = resolveThemeFromPreference("auto");
+      applyTheme(nextTheme, "auto");
+      window.dispatchEvent(
+        new CustomEvent(THEME_CHANGE_EVENT, {
+          detail: {
+            theme: nextTheme,
+            preference: "auto"
+          }
+        })
+      );
+    };
+
+    if (media.addEventListener) {
+      media.addEventListener("change", onSystemThemeChange);
+    } else if (media.addListener) {
+      media.addListener(onSystemThemeChange);
+    }
+  }
 })();
 `;
 
@@ -127,13 +178,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   const cookieStore = await cookies();
-  const cookieTheme = sanitizeTheme(cookieStore.get(THEME_COOKIE_KEY)?.value);
-  const initialTheme = cookieTheme ?? DEFAULT_THEME;
+  const cookieThemePreference = sanitizeThemePreference(cookieStore.get(THEME_COOKIE_KEY)?.value);
+  const initialThemePreference = cookieThemePreference ?? DEFAULT_THEME_PREFERENCE;
+  const initialTheme = isAppTheme(initialThemePreference) ? initialThemePreference : DEFAULT_THEME;
 
   return (
     <html
       lang="en"
       data-theme={initialTheme}
+      data-theme-preference={initialThemePreference}
       className={initialTheme === "dark" ? "dark" : undefined}
       suppressHydrationWarning
     >

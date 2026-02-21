@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { CONTENT_STATES, CONTENT_TYPES } from "@/lib/constants";
+import {
+  CONTENT_STATES,
+  CONTENT_TYPES,
+  VIP_AUCTION_STATUSES,
+  VIP_BASE_BID_BY_DURATION,
+  VIP_SLOT_DURATIONS
+} from "@/lib/constants";
 
 export const checkoutCreateSchema = z.object({
   email: z.string().email(),
@@ -165,5 +171,105 @@ export const memberLeaderboardQuerySchema = z
     page: z.coerce.number().int().min(1).max(1000).optional(),
     pageSize: z.coerce.number().int().min(5).max(50).optional(),
     q: z.string().trim().max(80).optional()
+  })
+  .strict();
+
+const vipDurationSchema = z
+  .coerce
+  .number()
+  .int()
+  .refine((value) => VIP_SLOT_DURATIONS.includes(value as (typeof VIP_SLOT_DURATIONS)[number]), {
+    message: "Invalid duration"
+  });
+
+export const vipAuctionListQuerySchema = z
+  .object({
+    liveLimit: z.coerce.number().int().min(1).max(15).optional(),
+    upcomingLimit: z.coerce.number().int().min(1).max(20).optional(),
+    pastLimit: z.coerce.number().int().min(1).max(20).optional()
+  })
+  .strict();
+
+export const vipBidCreateSchema = z.object({
+  auctionId: z.string().trim().min(12).max(60),
+  amount: z.coerce.number().int().min(1).max(1_000_000),
+  idempotencyKey: z.string().trim().min(8).max(120).optional()
+}).strict();
+
+export const adminVipAuctionListQuerySchema = z
+  .object({
+    status: z.union([z.literal("ALL"), z.enum(VIP_AUCTION_STATUSES)]).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional()
+  })
+  .strict();
+
+export const adminVipAuctionCreateSchema = z
+  .object({
+    title: z.string().trim().min(4).max(120),
+    description: z.string().trim().max(600).optional(),
+    durationMinutes: vipDurationSchema,
+    callStartsAt: z.string().datetime(),
+    biddingStartsAt: z.string().datetime(),
+    biddingEndsAt: z.string().datetime(),
+    startingBidAmount: z.coerce.number().int().min(1).max(1_000_000),
+    minIncrement: z.coerce.number().int().min(1).max(100_000).default(100),
+    antiSnipeEnabled: z.boolean().optional(),
+    antiSnipeWindowSeconds: z.coerce.number().int().min(5).max(900).optional(),
+    antiSnipeExtendSeconds: z.coerce.number().int().min(5).max(900).optional(),
+    antiSnipeMaxExtensions: z.coerce.number().int().min(0).max(100).optional(),
+    status: z.enum(VIP_AUCTION_STATUSES).optional(),
+    meetingJoinUrl: z.string().trim().url().optional(),
+    adminNotes: z.string().trim().max(500).optional()
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    const callStartsAt = new Date(data.callStartsAt);
+    const biddingStartsAt = new Date(data.biddingStartsAt);
+    const biddingEndsAt = new Date(data.biddingEndsAt);
+
+    if (!(biddingStartsAt < biddingEndsAt)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["biddingEndsAt"],
+        message: "Bidding end must be after bidding start"
+      });
+    }
+
+    if (!(biddingEndsAt < callStartsAt)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["callStartsAt"],
+        message: "Call start must be after bidding end"
+      });
+    }
+
+    const minBase = VIP_BASE_BID_BY_DURATION[data.durationMinutes as keyof typeof VIP_BASE_BID_BY_DURATION];
+    if (typeof minBase === "number" && data.startingBidAmount < minBase) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["startingBidAmount"],
+        message: `Minimum base for ${data.durationMinutes} min is ₹${minBase}`
+      });
+    }
+  });
+
+export const adminVipAuctionUpdateSchema = z
+  .object({
+    title: z.string().trim().min(4).max(120).optional(),
+    description: z.string().trim().max(600).nullable().optional(),
+    durationMinutes: vipDurationSchema.optional(),
+    callStartsAt: z.string().datetime().optional(),
+    biddingStartsAt: z.string().datetime().optional(),
+    biddingEndsAt: z.string().datetime().optional(),
+    startingBidAmount: z.coerce.number().int().min(1).max(1_000_000).optional(),
+    minIncrement: z.coerce.number().int().min(1).max(100_000).optional(),
+    antiSnipeEnabled: z.boolean().optional(),
+    antiSnipeWindowSeconds: z.coerce.number().int().min(5).max(900).optional(),
+    antiSnipeExtendSeconds: z.coerce.number().int().min(5).max(900).optional(),
+    antiSnipeMaxExtensions: z.coerce.number().int().min(0).max(100).optional(),
+    status: z.enum(VIP_AUCTION_STATUSES).optional(),
+    meetingJoinUrl: z.string().trim().url().nullable().optional(),
+    adminNotes: z.string().trim().max(500).nullable().optional(),
+    cancelledReason: z.string().trim().max(240).nullable().optional()
   })
   .strict();

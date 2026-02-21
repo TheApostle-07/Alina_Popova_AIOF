@@ -110,6 +110,7 @@ export async function middleware(request: NextRequest) {
     if (
       pathname.startsWith("/api/content/feed") ||
       pathname.startsWith("/api/media/sign") ||
+      pathname.startsWith("/api/vip") ||
       isMemberApiPath(pathname)
     ) {
       const memberCookie = request.cookies.get(MEMBER_COOKIE_NAME)?.value;
@@ -148,7 +149,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/access") || pathname.startsWith("/no-go-zone")) {
+  if (pathname.startsWith("/access") || pathname.startsWith("/no-go-zone") || pathname.startsWith("/vip")) {
     const memberCookie = request.cookies.get(MEMBER_COOKIE_NAME)?.value;
     if (!memberCookie) {
       const accountUrl = new URL("/account", request.url);

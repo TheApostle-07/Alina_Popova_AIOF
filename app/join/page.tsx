@@ -81,12 +81,6 @@ export default async function JoinPage() {
               <BadgeCheck className="h-4 w-4 text-success" /> Clear boundaries. No custom requests.
             </li>
           </ul>
-          <div className="space-y-3">
-            <Button asChild className="h-12 rounded-2xl px-7 text-base">
-              <a href="#checkout-card">Join Membership</a>
-            </Button>
-            <p className="text-xs text-muted">Tap join and complete checkout in under a minute.</p>
-          </div>
         </div>
 
         <div className="relative overflow-hidden rounded-3xl border border-border bg-surface/85 p-2.5 shadow-rose">
@@ -152,6 +146,15 @@ export default async function JoinPage() {
             </Card>
           ))}
         </div>
+        <div className="flex justify-center pt-2 md:pt-4">
+          <Button
+            asChild
+            className="h-16 min-w-[18rem] rounded-2xl px-12 text-lg font-semibold tracking-wide shadow-[0_18px_38px_rgba(230,75,140,0.45)] transition-transform duration-200 hover:scale-[1.02]"
+          >
+            <a href="#checkout-card">Join Membership</a>
+          </Button>
+        </div>
+        <p className="text-center text-xs text-muted">Instant unlock after secure Razorpay verification.</p>
       </section>
 
       <section>

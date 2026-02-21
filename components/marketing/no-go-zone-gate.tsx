@@ -27,7 +27,7 @@ export function NoGoZoneGate({ className, hintClassName, showHint = true }: NoGo
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const openNoGoZone = async () => {
+  const openVipArea = async () => {
     try {
       setChecking(true);
       const response = await fetch("/api/membership/access-check", {
@@ -38,7 +38,7 @@ export function NoGoZoneGate({ className, hintClassName, showHint = true }: NoGo
       const active = Boolean(response.ok && payload?.ok && payload?.data?.active);
 
       if (active) {
-        router.push("/no-go-zone");
+        router.push("/vip");
         return;
       }
 
@@ -55,9 +55,9 @@ export function NoGoZoneGate({ className, hintClassName, showHint = true }: NoGo
       <div className={cn("space-y-2", className)}>
         <Button
           variant="secondary"
-          onClick={openNoGoZone}
+          onClick={openVipArea}
           disabled={checking}
-          data-analytics-cta="no_go_zone_gate"
+          data-analytics-cta="vip_area_gate"
           className="group h-11 w-full rounded-2xl border-[#E6B93D]/55 bg-[linear-gradient(135deg,rgba(230,185,61,0.2),rgba(230,75,140,0.08))] text-[#F5C451] hover:border-[#FFD77A] hover:bg-[linear-gradient(135deg,#FFD77A,#E6B93D)] hover:text-[#2D2006] sm:w-auto"
         >
           {checking ? (
@@ -82,7 +82,7 @@ export function NoGoZoneGate({ className, hintClassName, showHint = true }: NoGo
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="no-go-zone-title"
+            aria-labelledby="vip-area-title"
             className="relative w-full max-w-md rounded-3xl border border-border bg-surface p-5 shadow-rose sm:p-6"
           >
             <button
@@ -99,7 +99,7 @@ export function NoGoZoneGate({ className, hintClassName, showHint = true }: NoGo
                 <Crown className="h-3.5 w-3.5" /> VIP Area
               </div>
               <div className="space-y-2">
-                <h3 id="no-go-zone-title" className="text-xl font-semibold">
+                <h3 id="vip-area-title" className="text-xl font-semibold">
                   VIP Area unlocks for active members
                 </h3>
                 <p className="text-sm text-muted">

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { resolveTheme } from "@/lib/theme-client";
-import { DEFAULT_THEME } from "@/lib/theme";
+import { resolveTheme, resolveThemePreference } from "@/lib/theme-client";
+import { DEFAULT_THEME, DEFAULT_THEME_PREFERENCE, type ThemePreference } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 type RestoreStatus =
@@ -55,7 +55,11 @@ function isValidPhoneNumber(value: string) {
   return hasSafeCharacters && digitsOnly.length >= 8 && digitsOnly.length <= 15;
 }
 
-function resolveUiThemeForEmail(): "dark" | "light" {
+function resolveUiThemeForEmail(): ThemePreference {
+  const preference = resolveThemePreference(DEFAULT_THEME_PREFERENCE);
+  if (preference !== "auto") {
+    return preference;
+  }
   return resolveTheme(DEFAULT_THEME);
 }
 

@@ -1114,7 +1114,7 @@ export function MemberDashboard({ subscriptionId, email, phone }: MemberDashboar
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              onClick={() => router.push("/no-go-zone")}
+              onClick={() => router.push("/vip")}
               className="group relative h-12 w-full overflow-hidden rounded-2xl border border-[#E6B93D]/70 bg-[linear-gradient(135deg,#FFD77A,#E6B93D)] px-4 text-sm font-semibold text-[#2D2006] shadow-[0_18px_38px_-16px_rgba(230,185,61,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#FFE7A3] hover:brightness-105 hover:shadow-[0_22px_46px_-18px_rgba(255,215,122,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5C451]/80 sm:w-auto sm:min-w-[14rem]"
             >
               <span className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.28),transparent_44%)] opacity-80 transition-opacity duration-200 group-hover:opacity-100" />

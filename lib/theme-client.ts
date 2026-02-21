@@ -1,12 +1,16 @@
 import {
   type AppTheme,
+  type ThemePreference,
+  DEFAULT_THEME_PREFERENCE,
   DEFAULT_THEME,
+  resolveThemeFromPreference,
   THEME_CHANGE_EVENT,
   THEME_COLORS,
   THEME_COOKIE_KEY,
   THEME_COOKIE_MAX_AGE_SECONDS,
   THEME_STORAGE_KEY,
   parseThemeCookie,
+  sanitizeThemePreference,
   sanitizeTheme
 } from "@/lib/theme";
 
@@ -24,12 +28,20 @@ function getRootElement() {
 }
 
 export function readPersistedTheme(): AppTheme | null {
+  const preference = readPersistedThemePreference();
+  if (!preference) {
+    return null;
+  }
+  return resolveThemeFromPreference(preference, DEFAULT_THEME);
+}
+
+export function readPersistedThemePreference(): ThemePreference | null {
   if (!hasBrowserDom()) {
     return null;
   }
 
   try {
-    const stored = sanitizeTheme(window.localStorage.getItem(THEME_STORAGE_KEY));
+    const stored = sanitizeThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY));
     if (stored) {
       return stored;
     }
@@ -40,6 +52,18 @@ export function readPersistedTheme(): AppTheme | null {
   return parseThemeCookie(document.cookie || "");
 }
 
+export function resolveThemePreference(
+  defaultPreference: ThemePreference = DEFAULT_THEME_PREFERENCE
+): ThemePreference {
+  const root = getRootElement();
+  const rootPreference = sanitizeThemePreference(root?.dataset.themePreference);
+  if (rootPreference) {
+    return rootPreference;
+  }
+
+  return readPersistedThemePreference() ?? defaultPreference;
+}
+
 export function resolveTheme(defaultTheme: AppTheme = DEFAULT_THEME): AppTheme {
   const root = getRootElement();
   const rootTheme = sanitizeTheme(root?.dataset.theme);
@@ -47,16 +71,25 @@ export function resolveTheme(defaultTheme: AppTheme = DEFAULT_THEME): AppTheme {
     return rootTheme;
   }
 
-  return readPersistedTheme() ?? defaultTheme;
+  const preference = readPersistedThemePreference();
+  if (!preference) {
+    return defaultTheme;
+  }
+  return resolveThemeFromPreference(preference, defaultTheme);
 }
 
-export function applyTheme(theme: AppTheme) {
+export function applyTheme(theme: AppTheme, preference?: ThemePreference) {
   const root = getRootElement();
   if (!root) {
     return;
   }
 
   root.dataset.theme = theme;
+  if (preference) {
+    root.dataset.themePreference = preference;
+  } else if (!sanitizeThemePreference(root.dataset.themePreference)) {
+    root.dataset.themePreference = theme;
+  }
   root.classList.toggle("dark", theme === "dark");
   root.style.colorScheme = theme;
 
@@ -67,29 +100,38 @@ export function applyTheme(theme: AppTheme) {
 }
 
 export function persistTheme(theme: AppTheme) {
+  persistThemePreference(theme);
+}
+
+export function persistThemePreference(preference: ThemePreference) {
   if (!hasBrowserDom()) {
     return;
   }
 
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, preference);
   } catch {
     // Ignore localStorage write failures.
   }
 
   try {
     const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `${THEME_COOKIE_KEY}=${encodeURIComponent(theme)}; Path=/; Max-Age=${THEME_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secureFlag}`;
+    document.cookie = `${THEME_COOKIE_KEY}=${encodeURIComponent(preference)}; Path=/; Max-Age=${THEME_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secureFlag}`;
   } catch {
     // Ignore cookie write failures.
   }
 }
 
-export function setTheme(theme: AppTheme) {
-  applyTheme(theme);
-  persistTheme(theme);
+export function setTheme(theme: ThemePreference) {
+  const resolvedTheme = resolveThemeFromPreference(theme, DEFAULT_THEME);
+  applyTheme(resolvedTheme, theme);
+  persistThemePreference(theme);
 
   if (hasBrowserDom()) {
-    window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme } }));
+    window.dispatchEvent(
+      new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: resolvedTheme, preference: theme } })
+    );
   }
+
+  return resolvedTheme;
 }

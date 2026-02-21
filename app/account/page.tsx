@@ -50,6 +50,25 @@ export default async function AccountPage() {
             </IntentLink>
           </CardContent>
         </Card>
+
+        {member ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>VIP call auctions</CardTitle>
+              <CardDescription>
+                Bid on private 1:1 call slots from 10 minutes to 60 minutes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted">
+                Live slots can be outbid in real-time. Highest valid bid wins when the timer closes.
+              </p>
+              <Button asChild className="w-full">
+                <IntentLink href="/vip">Open VIP auctions</IntentLink>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
 
       <div className="space-y-6">
