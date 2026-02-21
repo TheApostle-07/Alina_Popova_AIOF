@@ -5,7 +5,7 @@ import { handleApiError, jsonError, jsonOk, parseJsonBody } from "@/lib/http";
 import { AdminAuthAttemptModel } from "@/lib/models/admin-auth-attempt";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIp, getIdentifierBucketKey } from "@/lib/request";
-import { assertAdminIpAllowed, assertSameOrigin, safeCompare } from "@/lib/security";
+import { assertAdminIpAllowed, safeCompare } from "@/lib/security";
 import { adminLoginSchema } from "@/lib/validators";
 import { setAdminSessionCookie, signAdminSession } from "@/lib/auth/session";
 
@@ -16,7 +16,6 @@ const LOCK_DURATION_MS = 15 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
-    assertSameOrigin(request);
     const ip = getClientIp(request);
     assertAdminIpAllowed(ip);
 
