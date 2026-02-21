@@ -15,16 +15,35 @@ export function safeCompare(a: string, b: string) {
   return crypto.timingSafeEqual(left, right);
 }
 
+function getSecFetchSite(request: Request) {
+  return (request.headers.get("sec-fetch-site") || "").trim().toLowerCase();
+}
+
+function isLikelySameSiteRequest(request: Request) {
+  const secFetchSite = getSecFetchSite(request);
+  return secFetchSite === "" || secFetchSite === "same-origin" || secFetchSite === "same-site";
+}
+
 export function assertSameOrigin(request: Request) {
   const allowedOrigins = new Set(getAllowedOrigins(request));
   const originHeader = request.headers.get("origin");
   const normalizedOrigin = normalizeOrigin(originHeader);
 
   if (originHeader && originHeader.toLowerCase() !== "null") {
-    if (!normalizedOrigin || !allowedOrigins.has(normalizedOrigin)) {
-      throw new Error("Invalid request origin");
+    if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
+      return;
     }
-    return;
+
+    const refererOrigin = normalizeOrigin(request.headers.get("referer"));
+    if (refererOrigin && allowedOrigins.has(refererOrigin) && isLikelySameSiteRequest(request)) {
+      return;
+    }
+
+    if (isLikelySameSiteRequest(request)) {
+      return;
+    }
+
+    throw new Error("Invalid request origin");
   }
 
   const refererHeader = request.headers.get("referer");
@@ -33,14 +52,7 @@ export function assertSameOrigin(request: Request) {
     return;
   }
 
-  const secFetchSite = (request.headers.get("sec-fetch-site") || "").toLowerCase();
-  const isLikelySameSite =
-    secFetchSite === "" ||
-    secFetchSite === "same-origin" ||
-    secFetchSite === "same-site" ||
-    secFetchSite === "none";
-
-  if (isLikelySameSite) {
+  if (isLikelySameSiteRequest(request)) {
     return;
   }
 

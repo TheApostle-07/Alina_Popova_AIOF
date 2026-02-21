@@ -16,8 +16,13 @@ export function normalizeOrigin(value: string | null | undefined) {
     return null;
   }
 
+  const normalizedValue = value.trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
   try {
-    return new URL(value).origin;
+    return new URL(normalizedValue).origin;
   } catch {
     return null;
   }
